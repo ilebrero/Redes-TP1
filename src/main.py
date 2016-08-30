@@ -22,6 +22,8 @@ args = parser.parse_args()
 
 DEBUG = False
 BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
+WHO_HAS = 1
+IS_AT = 2
 
 def protocolFilter(packages, protocol):
 	filterd = list()
@@ -44,9 +46,43 @@ def relativeFrequency(packages):
 		n += 1
 		print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
 
+# Get seguro para tener default
+def _getSafe(dictionary, key, defaul):
+	if(key in dictionary):
+		return dictionary[key]
+	else:
+		return defaul
+
+def analizeSourceAndWhoHas(packages):
+	nodes = {}
+	for pkt in packages:
+		if(pkt.op == WHO_HAS):
+			ip = pkt.psrc # IP Origen
+			nodeValue = _getSafe(nodes, ip, 0)
+			nodes[ip] = nodeValue + 1
+	return nodes
+
+def analizeDestinyAndIsAt(packages):
+	nodes = {}
+	for pkt in packages:
+		if(pkt.op == IS_AT):
+			ip = pkt.pdst # IP Destino
+			nodeValue = _getSafe(nodes, ip, 0)
+			nodes[ip] = nodeValue + 1
+	return nodes
+ 
+
+#packages = loadPackage("./data/prueba.pcap")
 packages = loadPackage(args.filename)
 
 arpPackages = protocolFilter(packages, ARP)
 
+print("Frecuencia Relativa")
 relativeFrequency(arpPackages)
+
+
+print("AnalizeSourceAndWhoHas:")
+print(analizeSourceAndWhoHas(arpPackages))
+print("AnalizeDestinyAndIsAt:")
+print(analizeDestinyAndIsAt(arpPackages))
 
