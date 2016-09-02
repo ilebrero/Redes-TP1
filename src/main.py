@@ -2,7 +2,7 @@ from __future__ import division
 import scapy
 
 from scapy.all import rdpcap
-from scapy.all import ARP
+from scapy.all import ARP, Dot11, Ether
 import argparse
 
 ############## Parse de argumentos #####################
@@ -25,6 +25,20 @@ BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
 WHO_HAS = 1
 IS_AT = 2
 
+# Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
+# el destino y fuente de los distintos tipos de paquetes
+def getDestiny(package):
+	if(Ether in package):
+		return package.dst
+	elif (Dot11 in package):
+		return package.addr1
+
+def getSource(package):
+	if(Ether in package):
+		return package.dst
+	elif (Dot11 in package):
+		return package.addr3
+
 def protocolFilter(packages, protocol):
 	filterd = list()
 	for pkt in packages:
@@ -39,12 +53,14 @@ def relativeFrequency(packages):
 	n = 0
 	broadcasts = 0
 	for pkt in packages:
-		if(DEBUG):
-			print("Destino: %s" %pkt.dst)
-		if(pkt.dst == BROADCAST_ADDRESS):
+		dst = getDestiny(pkt)
+		if(dst == BROADCAST_ADDRESS):
 			broadcasts += 1
 		n += 1
-		print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
+		if(DEBUG):
+			print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
+		else:
+			print("%d\t%f" % (n, broadcasts/n))
 
 # Get seguro para tener default
 def _getSafe(dictionary, key, defaul):
@@ -72,7 +88,7 @@ def analizeDestinyAndIsAt(packages):
 	return nodes
  
 
-#packages = loadPackage("./data/prueba.pcap")
+#packages = loadPackage("./data/facu5.pcap")
 packages = loadPackage(args.filename)
 
 arpPackages = protocolFilter(packages, ARP)
@@ -85,4 +101,3 @@ print("AnalizeSourceAndWhoHas:")
 print(analizeSourceAndWhoHas(arpPackages))
 print("AnalizeDestinyAndIsAt:")
 print(analizeDestinyAndIsAt(arpPackages))
-
