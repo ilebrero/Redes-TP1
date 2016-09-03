@@ -4,6 +4,7 @@ import scapy
 from scapy.all import rdpcap
 from scapy.all import ARP, Dot11, Ether
 import argparse
+from math import log
 
 ############## Parse de argumentos #####################
 
@@ -62,8 +63,9 @@ def relativeFrequency(packages):
 		else:
 			print("%d\t%f" % (n, broadcasts/n))
 
-# Get seguro para tener default
-def _getSafe(dictionary, key, defaul):
+# Get seguro para tener default, en python si
+# no esta el valor pincha
+def _safeGet(dictionary, key, defaul):
 	if(key in dictionary):
 		return dictionary[key]
 	else:
@@ -74,7 +76,7 @@ def analizeSourceAndWhoHas(packages):
 	for pkt in packages:
 		if(pkt.op == WHO_HAS):
 			ip = pkt.psrc # IP Origen
-			nodeValue = _getSafe(nodes, ip, 0)
+			nodeValue = _safeGet(nodes, ip, 0)
 			nodes[ip] = nodeValue + 1
 	return nodes
 
@@ -83,10 +85,24 @@ def analizeDestinyAndIsAt(packages):
 	for pkt in packages:
 		if(pkt.op == IS_AT):
 			ip = pkt.pdst # IP Destino
-			nodeValue = _getSafe(nodes, ip, 0)
+			nodeValue = _safeGet(nodes, ip, 0)
 			nodes[ip] = nodeValue + 1
 	return nodes
- 
+
+def getSymbolProbability(samples, symbol):
+	samplesOcurrences = samples[symbol]
+	samplesAmount = sum(samples.values())
+	return samplesOcurrences / samplesAmount
+
+def getInformation(samples, symbol):
+	symbolProbability = getSymbolProbability(samples, symbol)
+	return -1 * log(symbolProbability,2)
+
+def getEntropy(samples):
+	information = 0
+	for symbol in samples.keys():
+		information += getSymbolProbability(samples, symbol) * getInformation(samples, symbol)
+	return information
 
 #packages = loadPackage("./data/facu5.pcap")
 packages = loadPackage(args.filename)
