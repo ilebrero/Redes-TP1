@@ -9,9 +9,8 @@ from math import log
 ############## Parse de argumentos #####################
 
 parser = argparse.ArgumentParser(description='TP 1 de Redes')
-parser.add_argument('--filename', metavar='filename', type=str,
-                    help='.pcap File')
-
+parser.add_argument('--filename', metavar='filename', type=str, help='.pcap File')
+parser.add_argument('--sources', metavar='sources', type=str, nargs='+', help='Use only a list of sources ie: s s1')
 args = parser.parse_args()
 
 
@@ -71,23 +70,14 @@ def _safeGet(dictionary, key, defaul):
 	else:
 		return defaul
 
-def analizeSourceAndWhoHas(packages):
-	nodes = {}
+def analizeSourceDestinyWithOp(packages, operation):
+	source = {}
 	for pkt in packages:
-		if(pkt.op == WHO_HAS):
-			ip = pkt.psrc # IP Origen
-			nodeValue = _safeGet(nodes, ip, 0)
-			nodes[ip] = nodeValue + 1
-	return nodes
-
-def analizeDestinyAndIsAt(packages):
-	nodes = {}
-	for pkt in packages:
-		if(pkt.op == IS_AT):
-			ip = pkt.pdst # IP Destino
-			nodeValue = _safeGet(nodes, ip, 0)
-			nodes[ip] = nodeValue + 1
-	return nodes
+		if(pkt.op == operation):
+			symbol = (pkt.psrc, pkt.pdst) # (IP Origen, IP Destino)
+			symbolValue = _safeGet(source, symbol, 0)
+			source[symbol] = symbolValue + 1
+	return source
 
 def getSymbolProbability(samples, symbol):
 	samplesOcurrences = samples[symbol]
@@ -109,11 +99,12 @@ packages = loadPackage(args.filename)
 
 arpPackages = protocolFilter(packages, ARP)
 
-print("Frecuencia Relativa")
-relativeFrequency(arpPackages)
+if (not args.sources or 's' in args.sources):
+	print("Frecuencia Relativa")
+	relativeFrequency(arpPackages)
 
-
-print("AnalizeSourceAndWhoHas:")
-print(analizeSourceAndWhoHas(arpPackages))
-print("AnalizeDestinyAndIsAt:")
-print(analizeDestinyAndIsAt(arpPackages))
+if (not args.sources or 's1' in args.sources):
+	print("Analize (Source,Destiny,WhoHas):")
+	print(analizeSourceDestinyWithOp(arpPackages,WHO_HAS))
+	print("Analize (Source,Destiny,IsAt):")
+	print(analizeSourceDestinyWithOp(arpPackages,IS_AT))
