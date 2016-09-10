@@ -1,5 +1,5 @@
 from __future__ import division
-import scapy
+import scapy 
 
 from scapy.all import rdpcap
 from scapy.all import ARP, Dot11, Ether
@@ -28,16 +28,16 @@ IS_AT = 2
 # Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
 # el destino y fuente de los distintos tipos de paquetes
 def getDestiny(package):
-	if(Ether in package):
-		return package.dst
-	elif (Dot11 in package):
-		return package.addr1
+    if(Ether in package):
+            return package.dst
+    elif (Dot11 in package):
+            return package.addr1
 
 def getSource(package):
-	if(Ether in package):
-		return package.dst
-	elif (Dot11 in package):
-		return package.addr3
+    if(Ether in package):
+            return package.dst
+    elif (Dot11 in package):
+            return package.addr3
 
 def protocolFilter(packages, protocol):
 	filterd = list()
@@ -82,7 +82,7 @@ def analizeSourceDestinyWithOp(packages, operation):
 def getSymbolProbability(samples, symbol):
 	samplesOcurrences = samples[symbol]
 	samplesAmount = sum(samples.values())
-	return samplesOcurrences / samplesAmount
+	return samplesOcurrences / float(samplesAmount)
 
 def getInformation(samples, symbol):
 	symbolProbability = getSymbolProbability(samples, symbol)
@@ -105,6 +105,13 @@ if (not args.sources or 's' in args.sources):
 
 if (not args.sources or 's1' in args.sources):
 	print("Analize (Source,Destiny,WhoHas):")
-	print(analizeSourceDestinyWithOp(arpPackages,WHO_HAS))
+	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+        print(sourceWhoHas)
+        with open(arg.filename + '_whoHas') as whoHasResults:
+            for info in sourceWhoHas:
+                whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
+                
+
 	print("Analize (Source,Destiny,IsAt):")
-	print(analizeSourceDestinyWithOp(arpPackages,IS_AT))
+        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+	print(sourceIsAt)
