@@ -1,5 +1,6 @@
 from __future__ import division
 import scapy
+import operator
 
 from scapy.all import rdpcap
 from scapy.all import ARP, Dot11, Ether
@@ -86,7 +87,7 @@ def getSymbolProbability(samples, symbol):
 
 def getInformation(samples, symbol):
 	symbolProbability = getSymbolProbability(samples, symbol)
-	return -1 * log(symbolProbability,2)
+	return -1 * log(symbolProbability,2)		
 
 def getEntropy(samples):
 	information = 0
@@ -94,7 +95,34 @@ def getEntropy(samples):
 		information += getSymbolProbability(samples, symbol) * getInformation(samples, symbol)
 	return information
 
-#packages = loadPackage("./data/facu5.pcap")
+def getSymbolsInformation(samples):
+	symbolsInformation = {}
+	for symbol in samples.keys(): #saca la informacion de casa symbolo en la fuente
+		symbolsInformation.update( {str(symbol) : getInformation(samples, symbol)} )
+	#comparo la informacion con la entropia
+	return symbolsInformation
+
+#para tener todos los datos en una sola llamada
+#Devulve: *Entropia de la fuente
+#		  *Lista: <symbolo, informacion> 
+#		  *Lista: <symbolo, frecuencia>
+def obtenerDatos(samples):
+	#obtengo informacion de los symbolos
+	symbolsInformation = getSymbolsInformation(samples)
+	#ordeno por valor de informacion
+	sortedInformation = sorted(symbolsInformation.items(), key=operator.itemgetter(1))
+	#obtengo la entropia
+	sourceEntrophy = getEntropy(samples)
+	return [sourceEntrophy, sortedInformation, samples] 
+
+def obtenerDatosaGraficarDesdeArchivo(file, source):
+	packages 	 = loadPackage(file)
+	arpPackages  = protocolFilter(packages, ARP)
+	rawData 	 = analizeSourceDestinyWithOp(arpPackages,source)
+	datosParaGraficar = obtenerDatos(rawData)
+	return datosParaGraficar 
+
+
 packages = loadPackage(args.filename)
 
 arpPackages = protocolFilter(packages, ARP)
