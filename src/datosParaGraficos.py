@@ -17,6 +17,9 @@ args = parser.parse_args()
 
 ########################################################
 
+def printDecimal(f):
+	return ("%f" % f).replace('.', ',')
+
 WHO_HAS = 1
 IS_AT = 2
 
@@ -36,6 +39,14 @@ if (source == 'WHO_HAS'):
 if (source == 'IS_AT'):
 	rawData = analizeSourceDestinyWithOp(arpPackages,IS_AT)
 
-datosParaGraficar = obtenerDatos(rawData)
-print datosParaGraficar 
+sourceEntrophy, sortedInformation, samples, ips = obtenerDatos(rawData)
+
+print("entropia: ", sourceEntrophy)
+#print("sortedInformation: ", sortedInformation)
+print("sortedInformation:")
+for e in sortedInformation:
+	print("%s\t%s" %(e[0],printDecimal(e[1])))
+
+print("samples: ", samples)
+print("ips: ", ips)
 
