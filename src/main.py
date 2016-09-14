@@ -6,6 +6,7 @@ from scapy.all import rdpcap
 from scapy.all import ARP, Dot11, Ether
 import argparse
 from math import log
+from sets import Set
 
 ############## Parse de argumentos #####################
 
@@ -113,15 +114,31 @@ def obtenerDatos(samples):
 	sortedInformation = sorted(symbolsInformation.items(), key=operator.itemgetter(1))
 	#obtengo la entropia
 	sourceEntrophy = getEntropy(samples)
-	return [sourceEntrophy, sortedInformation, samples] 
+	#obtengo las ips y sus cantidades
+	ips = obtenerIps(samples)
+	return [sourceEntrophy, sortedInformation, samples, ips]
 
 def obtenerDatosaGraficarDesdeArchivo(file, source):
 	packages 	 = loadPackage(file)
 	arpPackages  = protocolFilter(packages, ARP)
-	rawData 	 = analizeSourceDestinyWithOp(arpPackages,source)
-	datosParaGraficar = obtenerDatos(rawData)
+	whoHasData 	 = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+	isAtData 	 = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+	datosParaGraficar = obtenerDatos(whoHasData)
+	datosParaGraficar = obtenerDatos(isAtData)
 	return datosParaGraficar 
 
+def obtenerIps(samples):
+	ips = {}
+	for sample in samples.keys():
+		if sample[0] in ips:
+			ips[sample[0]] = ips[sample[0]] + 1 
+		else:
+			ips[sample[0]] = 1
+		if sample[1] in ips:
+			ips[sample[1]] = ips[sample[1]] + 1 
+		else:
+			ips[sample[1]] = 1
+	return ips
 
 packages = loadPackage(args.filename)
 
