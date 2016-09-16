@@ -2,6 +2,7 @@ from main import loadPackage
 from main import protocolFilter
 from main import analizeSourceDestinyWithOp
 from main import obtenerDatos
+from main import printDecimal
 
 import scapy
 from scapy.all import ARP, Dot11, Ether
@@ -16,9 +17,6 @@ parser.add_argument('--sources', metavar='sources', type=str, nargs='+', help='U
 args = parser.parse_args()
 
 ########################################################
-
-def printDecimal(f):
-	return ("%f" % f).replace('.', ',')
 
 WHO_HAS = 1
 IS_AT = 2

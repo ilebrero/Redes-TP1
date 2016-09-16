@@ -51,6 +51,9 @@ def protocolFilter(packages, protocol):
 def loadPackage(filename):
 	return rdpcap(filename)
 
+def printDecimal(f):
+	return ("%f" % f).replace('.', ',')
+
 def relativeFrequency(packages):
 	n = 0
 	broadcasts = 0
@@ -62,7 +65,17 @@ def relativeFrequency(packages):
 		if(DEBUG):
 			print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
 		else:
-			print("%d\t%f" % (n, broadcasts/n))
+			print("%d\t%s" % (n, printDecimal(broadcasts/n)))
+
+def getSourceBroadcastUnicast(packages):
+	source = {'unicast': 0, 'broadcast': 0}
+	for pkt in packages:
+		dst = getDestiny(pkt)
+		if(dst == BROADCAST_ADDRESS):
+			source['broadcast'] += 1
+		else:
+			source['unicast'] += 1
+	return source
 
 # Get seguro para tener default, en python si
 # no esta el valor pincha
@@ -145,6 +158,9 @@ packages = loadPackage(args.filename)
 arpPackages = protocolFilter(packages, ARP)
 
 if (not args.sources or 's' in args.sources):
+	S = getSourceBroadcastUnicast(arpPackages)
+	print("Entropia: %s" % printDecimal(getEntropy(S)))
+	print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
 	print("Frecuencia Relativa")
 	relativeFrequency(arpPackages)
 
