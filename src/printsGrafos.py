@@ -18,7 +18,7 @@ def createGraph(graphComment, data):
 	dot = Digraph(comment=graphComment)
 	ips = obtenerIps(data)
 	for ip in ips.keys():
-		size=str(ips[ip]/10)
+		size=str(ips[ip]/10) #ajustar mejor el valor, algunos valores muy chicos quedan afuera
 		dot.node(ip, str(ips[ip]), width=size, height=size, fixedsize='true')
 	for conexion in data.keys():
 		dot.edge(conexion[0], conexion[1])
@@ -27,9 +27,18 @@ def createGraph(graphComment, data):
 def printGraph(dot):
 	dot.render('test-output/round-table.gv', view=True)
 
-dataWho = obtenerDatosaGraficarDesdeArchivo(args.filename, WHO_HAS)
-dataIs  = obtenerDatosaGraficarDesdeArchivo(args.filename, WHO_HAS)
-#dotWho  = createGraph("red con Who_has", dataWho[3])
-dotIs   = createGraph("red con Is_At", dataIs[3])
-#printGraph(dotWho)
+
+#Con esto se puede graficar!
+
+#WHO_HAS viendo las ips de destino
+dataWhoDestiny = obtenerDatosaGraficarDesdeArchivo(args.filename, WHO_HAS, DESTINY)
+
+#WHO_HAS viendo las ips de origen
+#dataWhoOrigin = obtenerDatosaGraficarDesdeArchivo(args.filename, WHO_HAS)
+
+#armo el grafo de conexiones
+dotWhoOrigin  = createGraph("red con Who_has solo destino", dataWhoDestiny[3])
+
+#printeo el grafio
+printGraph(dotWhoOrigin)
 printGraph(dotIs)

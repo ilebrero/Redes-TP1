@@ -123,7 +123,7 @@ def getSymbolsInformation(samples):
 #Devulve: *Entropia de la fuente
 #		  *Lista: <symbolo, informacion> 
 #		  *Lista: <symbolo, frecuencia>
-def obtenerDatos(samples):
+def obtenerDatos(samples, option):
 	#obtengo informacion de los symbolos
 	symbolsInformation = getSymbolsInformation(samples)
 	#ordeno por valor de informacion
@@ -131,15 +131,15 @@ def obtenerDatos(samples):
 	#obtengo la entropia
 	sourceEntrophy = getEntropy(samples)
 	#obtengo las ips y sus cantidades
-	ips = obtenerIps(samples)
+	ips = obtenerIps(samples, option)
 	return [sourceEntrophy, sortedInformation, samples, ips]
 
-def obtenerDatosaGraficarDesdeArchivo(file, source):
+def obtenerDatosaGraficarDesdeArchivo(file, source, option):
 	packages 	 = loadPackage(file)
 	arpPackages  = protocolFilter(packages, ARP)
 	whoHasData 	 = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
 	isAtData 	 = analizeSourceDestinyWithOp(arpPackages,IS_AT)
-	datosParaGraficar = obtenerDatos(whoHasData)
+	datosParaGraficar = obtenerDatos(whoHasData, option)
 	#datosParaGraficar = obtenerDatos(isAtData)
 	return datosParaGraficar 
 
