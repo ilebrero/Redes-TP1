@@ -1,7 +1,6 @@
 from __future__ import division
 import scapy
 import operator
-import os
 
 from scapy.all import rdpcap
 from scapy.all import ARP, Dot11, Ether
@@ -28,44 +27,63 @@ BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
 WHO_HAS = 1
 IS_AT = 2
 
-#######################################################
+# Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
+# el destino y fuente de los distintos tipos de paquetes
+def getDestiny(package):
+    if(Ether in package):
+            return package.dst
+    elif (Dot11 in package):
+            return package.addr1
+
+def getSource(package):
+    if(Ether in package):
+            return package.dst
+    elif (Dot11 in package):
+            return package.addr3
 
 def protocolFilter(packages, protocol):
-  filterd = list()
-  totalPackets = 0
-  for pkt in packages:
-    totalPackets +=1
-    if protocol in pkt:
-      filterd.append(pkt)
-  return (filterd, totalPackets, len(filterd))
+	filterd = list()
+	for pkt in packages:
+		if protocol in pkt:
+			filterd.append(pkt)
+	return filterd
 
 def loadPackage(filename):
 	return rdpcap(filename)
 
-def BroadcastUnicastFrequency(packages):
-  res = {'broadcast': 0, 'unicast': 0}
-  for pkt in packages:
-    if(pkt.fields['dst'] == BROADCAST_ADDRESS):
-      res['broadcast'] += 1
-    else:
-      res['unicast'] += 1
+def printDecimal(f):
+	return ("%f" % f).replace('.', ',')
 
-  return res
+def relativeFrequency(packages):
+	n = 0
+	broadcasts = 0
+	for pkt in packages:
+		dst = getDestiny(pkt)
+		if(dst == BROADCAST_ADDRESS):
+			broadcasts += 1
+		n += 1
+		if(DEBUG):
+			print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
+		else:
+			print("%d\t%s" % (n, printDecimal(broadcasts/n)))
 
+def getSourceBroadcastUnicast(packages):
+	source = {'unicast': 0, 'broadcast': 0}
+	for pkt in packages:
+		dst = getDestiny(pkt)
+		if(dst == BROADCAST_ADDRESS):
+			source['broadcast'] += 1
+		else:
+			source['unicast'] += 1
+	return source
+
+# Get seguro para tener default, en python si
+# no esta el valor pincha
 def _safeGet(dictionary, key, defaul):
-	if (key in dictionary):
+	if(key in dictionary):
 		return dictionary[key]
 	else:
 		return defaul
-
-def analizeDestinyWithOp(packages, operation):
-	source = {}
-	for pkt in packages:
-		if (pkt.op == operation):
-			symbol = pkt.pdst # (IP Destino)
-			symbolValue = _safeGet(source, symbol, 0)
-			source[symbol] = symbolValue + 1
-	return source
 
 def analizeSourceDestinyWithOp(packages, operation):
 	source = {}
@@ -79,11 +97,11 @@ def analizeSourceDestinyWithOp(packages, operation):
 def getSymbolProbability(samples, symbol):
 	samplesOcurrences = samples[symbol]
 	samplesAmount = sum(samples.values())
-	return samplesOcurrences / samplesAmount
+	return samplesOcurrences / float(samplesAmount)
 
 def getInformation(samples, symbol):
 	symbolProbability = getSymbolProbability(samples, symbol)
-	return -1 * log(symbolProbability,2)
+	return -1 * log(symbolProbability,2)		
 
 def getEntropy(samples):
 	information = 0
@@ -91,75 +109,71 @@ def getEntropy(samples):
 		information += getSymbolProbability(samples, symbol) * getInformation(samples, symbol)
 	return information
 
-#######################################################
+def getSymbolsInformation(samples):
+	symbolsInformation = {}
+	for symbol in samples.keys(): #saca la informacion de casa symbolo en la fuente
+		symbolsInformation.update( {str(symbol) : getInformation(samples, symbol)} )
+	#comparo la informacion con la entropia
+	return symbolsInformation
 
-# Loading packages
-print ("Loading Packages")
+#para tener todos los datos en una sola llamada
+#Devulve: *Entropia de la fuente
+#		  *Lista: <symbolo, informacion> 
+#		  *Lista: <symbolo, frecuencia>
+def obtenerDatos(samples):
+	#obtengo informacion de los symbolos
+	symbolsInformation = getSymbolsInformation(samples)
+	#ordeno por valor de informacion
+	sortedInformation = sorted(symbolsInformation.items(), key=operator.itemgetter(1))
+	#obtengo la entropia
+	sourceEntrophy = getEntropy(samples)
+	#obtengo las ips y sus cantidades
+	ips = obtenerIps(samples)
+	return [sourceEntrophy, sortedInformation, samples, ips]
+
+def obtenerDatosaGraficarDesdeArchivo(file, source):
+	packages 	 = loadPackage(file)
+	arpPackages  = protocolFilter(packages, ARP)
+	whoHasData 	 = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+	isAtData 	 = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+	datosParaGraficar = obtenerDatos(whoHasData)
+	datosParaGraficar = obtenerDatos(isAtData)
+	return datosParaGraficar 
+
+def obtenerIps(samples):
+	ips = {}
+	for sample in samples.keys():
+		if sample[0] in ips:
+			ips[sample[0]] = ips[sample[0]] + 1 
+		else:
+			ips[sample[0]] = 1
+		if sample[1] in ips:
+			ips[sample[1]] = ips[sample[1]] + 1 
+		else:
+			ips[sample[1]] = 1
+	return ips
+
 packages = loadPackage(args.filename)
-print ("Done!")
-print ("")
 
-# Keeping only the ones with ARP
-print ("Filtering Packages")
-(arpPackages, amountPackages, amountArpPackages) = protocolFilter(packages, ARP)
-print ("Done!")
-print ("")
-print ("###########################################")
+arpPackages = protocolFilter(packages, ARP)
 
-print ("ARP relative frequence in total packages:")
-print ("")
-print ("#Packages: %d, #ARPPackages= %d, p(ARP)= %f" % (amountPackages, amountArpPackages, amountArpPackages / amountPackages))
-print ("")
-print ("##########################################")
-
-# Checking if there aren't parameters or if I'm asking for 'S' source
 if (not args.sources or 's' in args.sources):
-	#print("Broadcast and Unicast Frequency")
-  # My symbols are Broadcast or Unicast
-  s_source = BroadcastUnicastFrequency(packages)
-  broadcasts = s_source['broadcast']
-  unicasts = s_source['unicast']
-  n = broadcasts + unicasts
+	S = getSourceBroadcastUnicast(arpPackages)
+	print("Entropia: %s" % printDecimal(getEntropy(S)))
+	print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
+	print("Frecuencia Relativa")
+	relativeFrequency(arpPackages)
 
-  print ("S0 source data:")
-  print ("")
-  print ("#Packages: %d, p(Broadcast)=%f, p(Unicast)=%f" % (n, broadcasts/n, unicasts/n))
-  print ("I(Broadcast)=%f, I(Unicast)=%f" % (-1 * log(broadcasts/n, 2), -1 * log(unicasts/n, 2)))
-  print ("Entropy: %f" % getEntropy(s_source))
-  print ("")
-  print ("")
-
-# Checking if there aren't parameters or if I'm asking for 'S1' source
 if (not args.sources or 's1' in args.sources):
-  # My symbol is destiny WhoHas: It return (IP_dest, #WHO_HAS)
-  destinyWhoHas = analizeDestinyWithOp(arpPackages,WHO_HAS)
+	print("Analize (Source,Destiny,WhoHas):")
+	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+        print(sourceWhoHas)
+        with open(arg.filename + '_whoHas') as whoHasResults:
+            for info in sourceWhoHas:
+                whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
+                
 
-  # Getting filename
-  filename = args.filename.split('/')[-1:][0].split('.')[0]
+	print("Analize (Source,Destiny,IsAt):")
+        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+	print(sourceIsAt)
 
-  directory = filename + '_data/'
-  
-  # Creating folder for new files
-  if not os.path.exists(directory):
-    os.mkdir(directory)
-
-  # Saving to file "filename" this format per line: IP_dest,#WHO_HAS
-  with open(directory + filename + '_whoHas', 'w') as whoHasResults:
-    for info in destinyWhoHas:
-      whoHasResults.write(info + ',' + str(destinyWhoHas[info]) + '\n')
-
-  # Saving to file "filename" this format per line: IP_dest,Information
-  with open(directory + filename + '_whoHasInformation', 'w') as whoHasResults:
-    for info in destinyWhoHas:
-      whoHasResults.write(info + ',' + str(getInformation(destinyWhoHas, info)) + '\n')
-
-  with open(directory + filename + '_entropy', 'w') as whoHasResults:
-    whoHasResults.write(str(getEntropy(destinyWhoHas)) + '\n')
-
-  # This is just for making the graphs
-  # Getting {(IP_source, IP_dest): WHO_HAS_connections)}
-  sourceDestWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
-  # Saving to file with "filename" this format per line: IP_source, IP_dest, #WHO_HAS_connections
-  with open(directory + filename + '_connections', 'w') as whoHasDestConnections:
-    for info in sourceDestWhoHas:
-      whoHasDestConnections.write(info[0] + ',' + info[1] + ',' + str(sourceDestWhoHas[info]) + '\n')
