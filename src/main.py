@@ -22,10 +22,13 @@ args = parser.parse_args()
 # Por ahora no se usan pero esta bueno saber que existen
 #from scapy.all import sr1,IP,UDP,DNS,DNSQR,DNSRR,TCP
 
-DEBUG = False
+DEBUG 			  = False
 BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
-WHO_HAS = 1
-IS_AT = 2
+WHO_HAS 		  = 1
+IS_AT 			  = 2
+
+ORIGIN  = 3
+DESTINY = 4
 
 # Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
 # el destino y fuente de los distintos tipos de paquetes
@@ -137,23 +140,25 @@ def obtenerDatosaGraficarDesdeArchivo(file, source):
 	whoHasData 	 = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
 	isAtData 	 = analizeSourceDestinyWithOp(arpPackages,IS_AT)
 	datosParaGraficar = obtenerDatos(whoHasData)
-	datosParaGraficar = obtenerDatos(isAtData)
+	#datosParaGraficar = obtenerDatos(isAtData)
 	return datosParaGraficar 
 
-def obtenerIps(samples):
+def obtenerIps(samples, option):
 	ips = {}
 	for sample in samples.keys():
-		if sample[0] in ips:
-			ips[sample[0]] = ips[sample[0]] + 1 
-		else:
-			ips[sample[0]] = 1
-		if sample[1] in ips:
-			ips[sample[1]] = ips[sample[1]] + 1 
-		else:
-			ips[sample[1]] = 1
+		if (option == ORIGIN):
+			if sample[0] in ips:
+				ips[sample[0]] = ips[sample[0]] + 1 
+			else:
+				ips[sample[0]] = 1
+		if (option == DESTINY):
+			if sample[1] in ips:
+				ips[sample[1]] = ips[sample[1]] + 1 
+			else:
+				ips[sample[1]] = 1
 	return ips
 
-packages = loadPackage(args.filename)
+# packages = loadPackage(args.filename)
 
 arpPackages = protocolFilter(packages, ARP)
 
@@ -176,3 +181,4 @@ if (not args.sources or 's1' in args.sources):
 	print("Analize (Source,Destiny,IsAt):")
         sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
 	print(sourceIsAt)
+
