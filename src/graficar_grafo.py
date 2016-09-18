@@ -27,6 +27,7 @@ def rename_connections(ips_renamed, connections, connections_renamed):
     connections_renamed[(str(ips_renamed[connection[0]]), str(ips_renamed[connection[1]]))] = connections[connection]
   
 def create_graph(ips_renamed, connections_renamed):
+  print(connections_renamed)
 
   dot = Digraph(comment='unNombre')
   
@@ -34,12 +35,13 @@ def create_graph(ips_renamed, connections_renamed):
     dot.node(str(ip), str(ip), fixedsize='true')
   
   for connection in connections_renamed:
-    dot.edge(connection[0], connection[1])
+    if (int(connections_renamed[connection]) > 1):
+      dot.edge(connection[0], connection[1])
   
   return dot
 
 def print_graph(graph):
-  graph.render('prueba', view=True)
+  graph.render(sys.argv[1] + '_grafo', view=True)
 
 ######################################
 
