@@ -35,7 +35,6 @@ def createGraph(graphComment, data):
 def printGraph(dot):
 	dot.render('test-output/round-table.gv', view=True)
 
-
 #Con esto se puede graficar!
 def main():
 	#WHO_HAS viendo las ips de destino

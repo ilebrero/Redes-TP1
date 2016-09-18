@@ -27,7 +27,9 @@ args = parser.parse_args()
 DEBUG = False
 BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
 WHO_HAS = 1
-IS_AT = 2
+IS_AT 	= 2
+ORIGIN  = 3
+DESTINY = 4
 
 # Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
 # el destino y fuente de los distintos tipos de paquetes
@@ -172,7 +174,6 @@ def obtenerIps(samples, option):
 
 def main():
 	packages = loadPackage(args.filename)
-
 	arpPackages = protocolFilter(packages, ARP)
 
 	if (not args.sources or 's' in args.sources):
@@ -186,9 +187,9 @@ def main():
 		print("Analize (Source,Destiny,WhoHas):")
 		sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
 	        print(sourceWhoHas)
-	        with open(arg.filename + '_whoHas') as whoHasResults:
+	        with open(args.filename + '_whoHas', 'w') as whoHasResults:
 	            for info in sourceWhoHas:
-	                whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
+	                whoHasResults.write(str(info[0]) + ',' + str(info[1]) + ',' + str(sourceWhoHas[info]) + '\n')
 	                
 
 		print("Analize (Source,Destiny,IsAt):")
