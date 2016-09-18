@@ -160,25 +160,25 @@ def obtenerIps(samples, option):
 
 # packages = loadPackage(args.filename)
 
-arpPackages = protocolFilter(packages, ARP)
+# arpPackages = protocolFilter(packages, ARP)
 
-if (not args.sources or 's' in args.sources):
-	S = getSourceBroadcastUnicast(arpPackages)
-	print("Entropia: %s" % printDecimal(getEntropy(S)))
-	print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
-	print("Frecuencia Relativa")
-	relativeFrequency(arpPackages)
+# if (not args.sources or 's' in args.sources):
+# 	S = getSourceBroadcastUnicast(arpPackages)
+# 	print("Entropia: %s" % printDecimal(getEntropy(S)))
+# 	print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
+# 	print("Frecuencia Relativa")
+# 	relativeFrequency(arpPackages)
 
-if (not args.sources or 's1' in args.sources):
-	print("Analize (Source,Destiny,WhoHas):")
-	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
-        print(sourceWhoHas)
-        with open(arg.filename + '_whoHas') as whoHasResults:
-            for info in sourceWhoHas:
-                whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
+# if (not args.sources or 's1' in args.sources):
+# 	print("Analize (Source,Destiny,WhoHas):")
+# 	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+#         print(sourceWhoHas)
+#         with open(arg.filename + '_whoHas') as whoHasResults:
+#             for info in sourceWhoHas:
+#                 whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
                 
 
-	print("Analize (Source,Destiny,IsAt):")
-        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
-	print(sourceIsAt)
+# 	print("Analize (Source,Destiny,IsAt):")
+#         sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+# 	print(sourceIsAt)
 

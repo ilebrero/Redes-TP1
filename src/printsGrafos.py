@@ -8,6 +8,9 @@ import argparse
 WHO_HAS = 1
 IS_AT = 2
 
+ORIGIN  = 3
+DESTINY = 4
+
 parser = argparse.ArgumentParser(description='TP 1 de Redes')
 parser.add_argument('--filename', metavar='filename', type=str, help='.pcap File')
 args = parser.parse_args()
@@ -16,7 +19,7 @@ args = parser.parse_args()
 #Es lo que devuelve analizeSourceDestinyWithOp(--, --)
 def createGraph(graphComment, data):
 	dot = Digraph(comment=graphComment)
-	ips = obtenerIps(data)
+	ips = obtenerIps(data, WHO_HAS)
 	for ip in ips.keys():
 		size=str(ips[ip]/10) #ajustar mejor el valor, algunos valores muy chicos quedan afuera
 		dot.node(ip, str(ips[ip]), width=size, height=size, fixedsize='true')
@@ -41,4 +44,4 @@ dotWhoOrigin  = createGraph("red con Who_has solo destino", dataWhoDestiny[3])
 
 #printeo el grafio
 printGraph(dotWhoOrigin)
-printGraph(dotIs)
+#printGraph(dotIs)
