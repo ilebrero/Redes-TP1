@@ -1,4 +1,6 @@
 from __future__ import division
+
+import sys
 import scapy
 import operator
 
@@ -153,27 +155,46 @@ def obtenerIps(samples):
 			ips[sample[1]] = 1
 	return ips
 
-packages = loadPackage(args.filename)
+def obtenerIps(samples, option):
+	ips = {}
+	for sample in samples.keys():
+		if (option == ORIGIN):
+			if sample[0] in ips:
+				ips[sample[0]] = ips[sample[0]] + 1 
+			else:
+				ips[sample[0]] = 1
+		if (option == DESTINY):
+			if sample[1] in ips:
+				ips[sample[1]] = ips[sample[1]] + 1 
+			else:
+				ips[sample[1]] = 1
+	return ips
 
-arpPackages = protocolFilter(packages, ARP)
+def main():
+	packages = loadPackage(args.filename)
 
-if (not args.sources or 's' in args.sources):
-	S = getSourceBroadcastUnicast(arpPackages)
-	print("Entropia: %s" % printDecimal(getEntropy(S)))
-	print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
-	print("Frecuencia Relativa")
-	relativeFrequency(arpPackages)
+	arpPackages = protocolFilter(packages, ARP)
 
-if (not args.sources or 's1' in args.sources):
-	print("Analize (Source,Destiny,WhoHas):")
-	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
-        print(sourceWhoHas)
-        with open(arg.filename + '_whoHas') as whoHasResults:
-            for info in sourceWhoHas:
-                whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
-                
+	if (not args.sources or 's' in args.sources):
+		S = getSourceBroadcastUnicast(arpPackages)
+		print("Entropia: %s" % printDecimal(getEntropy(S)))
+		print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
+		print("Frecuencia Relativa")
+		relativeFrequency(arpPackages)
 
-	print("Analize (Source,Destiny,IsAt):")
-        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
-	print(sourceIsAt)
+	if (not args.sources or 's1' in args.sources):
+		print("Analize (Source,Destiny,WhoHas):")
+		sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+	        print(sourceWhoHas)
+	        with open(arg.filename + '_whoHas') as whoHasResults:
+	            for info in sourceWhoHas:
+	                whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
+	                
+
+		print("Analize (Source,Destiny,IsAt):")
+	        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+		print(sourceIsAt)
+
+if __name__ == "__main__":
+    sys.exit(main())
 
