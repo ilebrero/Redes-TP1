@@ -26,10 +26,8 @@ DEBUG 			  = False
 BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
 WHO_HAS 		  = 1
 IS_AT 			  = 2
-
-ORIGIN  = 3
-DESTINY = 4
-
+ORIGIN  		  = 3
+DESTINY 		  = 4
 # Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
 # el destino y fuente de los distintos tipos de paquetes
 def getDestiny(package):

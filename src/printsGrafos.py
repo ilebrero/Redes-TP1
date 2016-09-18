@@ -1,13 +1,16 @@
 from main import obtenerIps
-from main import obtenerDatosaGraficarDesdeArchivo
+from main import loadPackage
+from main import protocolFilter
+from main import analizeSourceDestinyWithOp
+
+from scapy.all import ARP
 
 from graphviz import Digraph
 
 import argparse
 
 WHO_HAS = 1
-IS_AT = 2
-
+IS_AT   = 2
 ORIGIN  = 3
 DESTINY = 4
 
@@ -19,10 +22,10 @@ args = parser.parse_args()
 #Es lo que devuelve analizeSourceDestinyWithOp(--, --)
 def createGraph(graphComment, data):
 	dot = Digraph(comment=graphComment)
-	ips = obtenerIps(data, WHO_HAS)
+	ips = obtenerIps(data, DESTINY)
 	for ip in ips.keys():
-		size=str(ips[ip]/10) #ajustar mejor el valor, algunos valores muy chicos quedan afuera
-		dot.node(ip, str(ips[ip]), width=size, height=size, fixedsize='true')
+		size=str(ips[ip]) #ajustar mejor el valor, algunos valores muy chicos quedan afuera
+		dot.node(ip, str(ip), width=size, height=size, fixedsize='true')
 	for conexion in data.keys():
 		dot.edge(conexion[0], conexion[1])
 	return dot
@@ -34,13 +37,15 @@ def printGraph(dot):
 #Con esto se puede graficar!
 
 #WHO_HAS viendo las ips de destino
-dataWhoDestiny = obtenerDatosaGraficarDesdeArchivo(args.filename, WHO_HAS, DESTINY)
+packages 	= loadPackage(args.filename)
+arpPackages = protocolFilter(packages, ARP)
+whoHasData 	= analizeSourceDestinyWithOp(arpPackages, WHO_HAS)
 
 #WHO_HAS viendo las ips de origen
 #dataWhoOrigin = obtenerDatosaGraficarDesdeArchivo(args.filename, WHO_HAS)
 
 #armo el grafo de conexiones
-dotWhoOrigin  = createGraph("red con Who_has solo destino", dataWhoDestiny[3])
+dotWhoOrigin  = createGraph("red con Who_has solo destino", whoHasData)
 
 #printeo el grafio
 printGraph(dotWhoOrigin)
