@@ -148,13 +148,13 @@ def obtenerIps(samples):
 	ips = {}
 	for sample in samples.keys():
 		if sample[0] in ips:
-			ips[sample[0]] = ips[sample[0]] + 1 
+			ips[sample[0]] = ips[sample[0]] + samples[sample]
 		else:
-			ips[sample[0]] = 1
+			ips[sample[0]] = samples[sample]
 		if sample[1] in ips:
-			ips[sample[1]] = ips[sample[1]] + 1 
+			ips[sample[1]] = ips[sample[1]] + samples[sample]
 		else:
-			ips[sample[1]] = 1
+			ips[sample[1]] = samples[sample]
 	return ips
 
 def obtenerIps(samples, option):
@@ -162,40 +162,83 @@ def obtenerIps(samples, option):
 	for sample in samples.keys():
 		if (option == ORIGIN):
 			if sample[0] in ips:
-				ips[sample[0]] = ips[sample[0]] + 1 
+				ips[sample[0]] = ips[sample[0]] + samples[sample]
 			else:
-				ips[sample[0]] = 1
+				ips[sample[0]] = samples[sample]
 		if (option == DESTINY):
 			if sample[1] in ips:
-				ips[sample[1]] = ips[sample[1]] + 1 
+				ips[sample[1]] = ips[sample[1]] + samples[sample]
 			else:
-				ips[sample[1]] = 1
+				ips[sample[1]] = samples[sample]
 	return ips
+
+def obtenerNodoMaxInfo(samples):
+	maxInfo = 0
+	result  = 0 
+	for sample in samples:
+		info = getInformation(samples, sample)
+		if (info > maxInfo):
+			result  = sample
+			maxInfo = info
+	return result
+
+def obtenerNodoMinInfo(samples, maxInfo):
+	minInfo = maxInfo
+	result  = 0
+	for sample in samples:
+		info = getInformation(samples, sample)
+		if (info < minInfo):
+			result  = sample
+			minInfo = info
+	return result
+
+def cantidad(samples):
+	total = 0
+	for sample in samples.keys():
+		total = total + samples[sample]
+	return total
 
 def main():
 	packages = loadPackage(args.filename)
-	arpPackages = protocolFilter(packages, ARP)
+	cantPacketes = 0
+	arpPackages  = protocolFilter(packages, ARP)
+	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+	sourceDestiny = obtenerIps(sourceWhoHas, DESTINY)
 
 	if (not args.sources or 's' in args.sources):
-		S = getSourceBroadcastUnicast(arpPackages)
+		S = getSourceBroadcastUnicast(packages)
+		total = S.get('unicast') + S.get('broadcast')
+
+		print("Cantidad de paquetes -> unicast: %s | broadcast: %s" %( S.get('unicast'), S.get('broadcast') ))
+		print("Probabilidad unicast: %s" % printDecimal(S.get('unicast')/total))
+		print("Probabilidad broadcast: %s" % printDecimal(S.get('broadcast')/total))
 		print("Entropia: %s" % printDecimal(getEntropy(S)))
 		print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
 		print("Frecuencia Relativa")
-		relativeFrequency(arpPackages)
+		relativeFrequency(packages)
 
 	if (not args.sources or 's1' in args.sources):
 		print("Analize (Source,Destiny,WhoHas):")
-		sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
-	        print(sourceWhoHas)
-	        with open(args.filename + '_whoHas', 'w') as whoHasResults:
-	            for info in sourceWhoHas:
-	                whoHasResults.write(str(info[0]) + ',' + str(info[1]) + ',' + str(sourceWhoHas[info]) + '\n')
-	                
+		
+		cantPacketes = cantidad(sourceDestiny)
 
-		print("Analize (Source,Destiny,IsAt):")
-	        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
-		print(sourceIsAt)
+		#muestro fuente y cantidad de packetes
+        print("Cantidad de paquetes ")
+        print(str(cantPacketes))
+
+        #Calculo nodos con max y min informacion y muestro
+        maxInfoNode = obtenerNodoMaxInfo(sourceDestiny)
+        minInfoNode = obtenerNodoMinInfo(sourceDestiny, getInformation(sourceDestiny, maxInfoNode))
+        print("el nodo con mas informacion fue: %s | informacion que provee: %s" %( maxInfoNode, getInformation(sourceDestiny, maxInfoNode) ))
+        print("el nodo con menos informacion fue: %s | informacion que provee: %s" %( minInfoNode, getInformation(sourceDestiny, minInfoNode) ))
+
+        with open(args.filename + '_whoHas', 'w') as whoHasResults:
+            for info in sourceDestiny:
+                whoHasResults.write(str(info[0]) + ',' + str(info[1]) + ',' + str(sourceDestiny[info]) + '\n')
+
+		# print("Analize (Source,Destiny,IsAt):")
+	 #        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+		# print(sourceIsAt)
 
 if __name__ == "__main__":
     sys.exit(main())
-
