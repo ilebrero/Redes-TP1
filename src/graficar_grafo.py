@@ -84,7 +84,26 @@ if (len(sys.argv) == 2):
   final_ips = set() 
   final_connections = {}
   filter_nodes(ips_renamed, connections_renamed, final_ips, final_connections, 2, 2)
-  dot = create_graph(final_ips, final_connections)
+  t = set()
+  t.add('14')
+  t.add('15')
+  t.add('55')
+  t.add('19')
+  t.add('37')
+  t.add('54')
+  t.add('24')
+  t.add('49')
+  t.add('2')
+  t.add('56')
+  t.add('38')
+  t.add('21')
+  f = final_ips.difference(t)
+  for connection in connections_renamed:
+    if (connection[0] in t or connection[1] in t):
+      final_connections.pop(connection)
+  print(f)
+  print(final_connections)
+  dot = create_graph(f, final_connections)
   print(len(final_ips))
   print_graph(dot)
 
