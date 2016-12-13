@@ -66,10 +66,10 @@ def relativeFrequency(packages):
 		if(dst == BROADCAST_ADDRESS):
 			broadcasts += 1
 		n += 1
-		if(DEBUG):
-			print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
-		else:
-			print("%d\t%s" % (n, printDecimal(broadcasts/n)))
+		# if(DEBUG):
+		# 	print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
+		# else:
+		# 	print("%d\t%s" % (n, printDecimal(broadcasts/n)))
 
 def getSourceBroadcastUnicast(packages):
 	source = {'unicast': 0, 'broadcast': 0}
@@ -198,6 +198,14 @@ def cantidad(samples):
 		total = total + samples[sample]
 	return total
 
+def obtenerNodosDestacados(entropia, samples):
+	distinguishedNodes = list()
+	for sample in samples:
+		info = getInformation(samples, sample)
+		if (info < entropia):
+			distinguishedNodes.append(sample)
+	return distinguishedNodes
+
 def main():
 	packages = loadPackage(args.filename)
 	cantPacketes = 0
@@ -206,31 +214,45 @@ def main():
 	sourceDestiny = obtenerIps(sourceWhoHas, DESTINY)
 
 	if (not args.sources or 's' in args.sources):
+
+		print("----- Fuente S -----")
+
 		S = getSourceBroadcastUnicast(packages)
 		total = S.get('unicast') + S.get('broadcast')
+		entropia = getEntropy(S)
 
 		print("Cantidad de paquetes -> unicast: %s | broadcast: %s" %( S.get('unicast'), S.get('broadcast') ))
 		print("Probabilidad unicast: %s" % printDecimal(S.get('unicast')/total))
 		print("Probabilidad broadcast: %s" % printDecimal(S.get('broadcast')/total))
-		print("Entropia: %s" % printDecimal(getEntropy(S)))
+		print("Entropia: %s" % printDecimal(entropia))
 		print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
-		print("Frecuencia Relativa")
-		relativeFrequency(packages)
+		# print("Frecuencia Relativa")
+		# relativeFrequency(packages)
 
 	if (not args.sources or 's1' in args.sources):
-		print("Analize (Source,Destiny,WhoHas):")
-		
+		print("----- Fuente S1 -----")
+		entropia = getEntropy(sourceDestiny)
 		cantPacketes = cantidad(sourceDestiny)
 
+        print("entropia: " + str(entropia))
+
 		#muestro fuente y cantidad de packetes
-        print("Cantidad de paquetes ")
-        print(str(cantPacketes))
+        print("Cantidad de paquetes " + str(cantPacketes))
 
         #Calculo nodos con max y min informacion y muestro
         maxInfoNode = obtenerNodoMaxInfo(sourceDestiny)
         minInfoNode = obtenerNodoMinInfo(sourceDestiny, getInformation(sourceDestiny, maxInfoNode))
-        print("el nodo con mas informacion fue: %s | informacion que provee: %s" %( maxInfoNode, getInformation(sourceDestiny, maxInfoNode) ))
-        print("el nodo con menos informacion fue: %s | informacion que provee: %s" %( minInfoNode, getInformation(sourceDestiny, minInfoNode) ))
+        distinguishedNodes = obtenerNodosDestacados(entropia, sourceDestiny)
+
+        if (len(distinguishedNodes) > 0):
+            print("Nodos destacados:")
+            for node in distinguishedNodes:
+                print("    " + node + " - informacion: " + str(getInformation(sourceDestiny, node)) )
+        else:
+        	print("No hubo nodos distinguidos")
+
+        # print("el nodo con mas informacion fue: %s | informacion que provee: %s" %( maxInfoNode, getInformation(sourceDestiny, maxInfoNode) ))
+        # print("el nodo con menos informacion fue: %s | informacion que provee: %s" %( minInfoNode, getInformation(sourceDestiny, minInfoNode) ))
 
         with open(args.filename + '_whoHas', 'w') as whoHasResults:
             for info in sourceDestiny:
