@@ -1,4 +1,6 @@
 from __future__ import division
+
+import sys
 import scapy
 import operator
 
@@ -22,12 +24,13 @@ args = parser.parse_args()
 # Por ahora no se usan pero esta bueno saber que existen
 #from scapy.all import sr1,IP,UDP,DNS,DNSQR,DNSRR,TCP
 
-DEBUG 			  = False
+DEBUG = False
 BROADCAST_ADDRESS = 'ff:ff:ff:ff:ff:ff'
-WHO_HAS 		  = 1
-IS_AT 			  = 2
-ORIGIN  		  = 3
-DESTINY 		  = 4
+WHO_HAS = 1
+IS_AT 	= 2
+ORIGIN  = 3
+DESTINY = 4
+
 # Como hay un protocolo raro en la Facu hacemos estas funciones para levantar
 # el destino y fuente de los distintos tipos de paquetes
 def getDestiny(package):
@@ -63,10 +66,10 @@ def relativeFrequency(packages):
 		if(dst == BROADCAST_ADDRESS):
 			broadcasts += 1
 		n += 1
-		if(DEBUG):
-			print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
-		else:
-			print("%d\t%s" % (n, printDecimal(broadcasts/n)))
+		# if(DEBUG):
+		# 	print("n: %d, p(Broadcast)=%f" % (n, broadcasts/n))
+		# else:
+		# 	print("%d\t%s" % (n, printDecimal(broadcasts/n)))
 
 def getSourceBroadcastUnicast(packages):
 	source = {'unicast': 0, 'broadcast': 0}
@@ -121,7 +124,7 @@ def getSymbolsInformation(samples):
 #Devulve: *Entropia de la fuente
 #		  *Lista: <symbolo, informacion> 
 #		  *Lista: <symbolo, frecuencia>
-def obtenerDatos(samples, option):
+def obtenerDatos(samples):
 	#obtengo informacion de los symbolos
 	symbolsInformation = getSymbolsInformation(samples)
 	#ordeno por valor de informacion
@@ -129,54 +132,135 @@ def obtenerDatos(samples, option):
 	#obtengo la entropia
 	sourceEntrophy = getEntropy(samples)
 	#obtengo las ips y sus cantidades
-	ips = obtenerIps(samples, option)
+	ips = obtenerIps(samples)
 	return [sourceEntrophy, sortedInformation, samples, ips]
 
-def obtenerDatosaGraficarDesdeArchivo(file, source, option):
+def obtenerDatosaGraficarDesdeArchivo(file, source):
 	packages 	 = loadPackage(file)
 	arpPackages  = protocolFilter(packages, ARP)
 	whoHasData 	 = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
 	isAtData 	 = analizeSourceDestinyWithOp(arpPackages,IS_AT)
-	datosParaGraficar = obtenerDatos(whoHasData, option)
-	#datosParaGraficar = obtenerDatos(isAtData)
+	datosParaGraficar = obtenerDatos(whoHasData)
+	datosParaGraficar = obtenerDatos(isAtData)
 	return datosParaGraficar 
+
+def obtenerIps(samples):
+	ips = {}
+	for sample in samples.keys():
+		if sample[0] in ips:
+			ips[sample[0]] = ips[sample[0]] + samples[sample]
+		else:
+			ips[sample[0]] = samples[sample]
+		if sample[1] in ips:
+			ips[sample[1]] = ips[sample[1]] + samples[sample]
+		else:
+			ips[sample[1]] = samples[sample]
+	return ips
 
 def obtenerIps(samples, option):
 	ips = {}
 	for sample in samples.keys():
 		if (option == ORIGIN):
 			if sample[0] in ips:
-				ips[sample[0]] = ips[sample[0]] + 1 
+				ips[sample[0]] = ips[sample[0]] + samples[sample]
 			else:
-				ips[sample[0]] = 1
+				ips[sample[0]] = samples[sample]
 		if (option == DESTINY):
 			if sample[1] in ips:
-				ips[sample[1]] = ips[sample[1]] + 1 
+				ips[sample[1]] = ips[sample[1]] + samples[sample]
 			else:
-				ips[sample[1]] = 1
+				ips[sample[1]] = samples[sample]
 	return ips
 
-# packages = loadPackage(args.filename)
+def obtenerNodoMaxInfo(samples):
+	maxInfo = 0
+	result  = 0 
+	for sample in samples:
+		info = getInformation(samples, sample)
+		if (info > maxInfo):
+			result  = sample
+			maxInfo = info
+	return result
 
-# arpPackages = protocolFilter(packages, ARP)
+def obtenerNodoMinInfo(samples, maxInfo):
+	minInfo = maxInfo
+	result  = 0
+	for sample in samples:
+		info = getInformation(samples, sample)
+		if (info < minInfo):
+			result  = sample
+			minInfo = info
+	return result
 
-# if (not args.sources or 's' in args.sources):
-# 	S = getSourceBroadcastUnicast(arpPackages)
-# 	print("Entropia: %s" % printDecimal(getEntropy(S)))
-# 	print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
-# 	print("Frecuencia Relativa")
-# 	relativeFrequency(arpPackages)
+def cantidad(samples):
+	total = 0
+	for sample in samples.keys():
+		total = total + samples[sample]
+	return total
 
-# if (not args.sources or 's1' in args.sources):
-# 	print("Analize (Source,Destiny,WhoHas):")
-# 	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
-#         print(sourceWhoHas)
-#         with open(arg.filename + '_whoHas') as whoHasResults:
-#             for info in sourceWhoHas:
-#                 whoHasResults.write(info[0] + ',' + info[1] + ',' + sourceWhoHas[info] + '\n')
-                
+def obtenerNodosDestacados(entropia, samples):
+	distinguishedNodes = list()
+	for sample in samples:
+		info = getInformation(samples, sample)
+		if (info < entropia):
+			distinguishedNodes.append(sample)
+	return distinguishedNodes
 
-# 	print("Analize (Source,Destiny,IsAt):")
-#         sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
-# 	print(sourceIsAt)
+def main():
+	packages = loadPackage(args.filename)
+	cantPacketes = 0
+	arpPackages  = protocolFilter(packages, ARP)
+	sourceWhoHas = analizeSourceDestinyWithOp(arpPackages,WHO_HAS)
+	sourceDestiny = obtenerIps(sourceWhoHas, DESTINY)
 
+	if (not args.sources or 's' in args.sources):
+
+		print("----- Fuente S -----")
+
+		S = getSourceBroadcastUnicast(packages)
+		total = S.get('unicast') + S.get('broadcast')
+		entropia = getEntropy(S)
+
+		print("Cantidad de paquetes -> unicast: %s | broadcast: %s" %( S.get('unicast'), S.get('broadcast') ))
+		print("Probabilidad unicast: %s" % printDecimal(S.get('unicast')/total))
+		print("Probabilidad broadcast: %s" % printDecimal(S.get('broadcast')/total))
+		print("Entropia: %s" % printDecimal(entropia))
+		print("SymbolsInformation: Unicast: %s, BroadCast: %s " %(printDecimal(getSymbolsInformation(S)['unicast']), printDecimal(getSymbolsInformation(S)['broadcast'])))
+		# print("Frecuencia Relativa")
+		# relativeFrequency(packages)
+
+	if (not args.sources or 's1' in args.sources):
+		print("----- Fuente S1 -----")
+		entropia = getEntropy(sourceDestiny)
+		cantPacketes = cantidad(sourceDestiny)
+
+        print("entropia: " + str(entropia))
+
+		#muestro fuente y cantidad de packetes
+        print("Cantidad de paquetes " + str(cantPacketes))
+
+        #Calculo nodos con max y min informacion y muestro
+        maxInfoNode = obtenerNodoMaxInfo(sourceDestiny)
+        minInfoNode = obtenerNodoMinInfo(sourceDestiny, getInformation(sourceDestiny, maxInfoNode))
+        distinguishedNodes = obtenerNodosDestacados(entropia, sourceDestiny)
+
+        if (len(distinguishedNodes) > 0):
+            print("Nodos destacados:")
+            for node in distinguishedNodes:
+                print("    " + node + " - informacion: " + str(getInformation(sourceDestiny, node)) )
+        else:
+        	print("No hubo nodos distinguidos")
+
+        # print("el nodo con mas informacion fue: %s | informacion que provee: %s" %( maxInfoNode, getInformation(sourceDestiny, maxInfoNode) ))
+        # print("el nodo con menos informacion fue: %s | informacion que provee: %s" %( minInfoNode, getInformation(sourceDestiny, minInfoNode) ))
+
+        with open(args.filename + '_whoHas', 'w') as whoHasResults:
+            for info in sourceDestiny:
+                whoHasResults.write(str(info[0]) + ',' + str(info[1]) + ',' + str(sourceDestiny[info]) + '\n')
+
+		# print("Analize (Source,Destiny,IsAt):")
+	 #        sourceIsAt = analizeSourceDestinyWithOp(arpPackages,IS_AT)
+		# print(sourceIsAt)
+
+if __name__ == "__main__":
+    sys.exit(main())
